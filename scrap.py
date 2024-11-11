@@ -3,12 +3,9 @@ from selenium.webdriver.chrome.options import Options
 import time
 import requests
 from urllib.request import urlopen
-from bs4 import BeautifulSoup
-import os
 
 def downloadVideo(link, id):
     print(f"Downloading video {id} from: {link}")
-    
     cookies = {
     'cf_clearance': 'P06jsxmcAOm5RE667Liyy8JqAqmtK.yxk37RcFoR4jE-1731336275-1.2.1.1-YQUdbxr83VgvzpaPhbY9lFxNchdPD0NlHXsJd_X8dBhVMMMh8dd9Hjjtb7AsKgxxsNaUi52qfl7o3SWLVAWVM06cYIQzVKqhO2Z8GxSFDXcEwNuIoQlyZZLQj5LFvPYWgetdCfZX.mULyAYeUTfAQXv.nEq1LhScbzteV0NlNknlwGtChz_YiFJVg_7f.XMhHNzsv1o2aJce3b8JMnrj_u7VNY22y.M_DQ.AD_h4itfhOmm4ngHGMGxtbbMEHCJ9VMhB2xujoUxLNGhzPlF6LwiY0eZZ9ZNxKKDVt_PDMoHUUMdr5YfpSNVZuzQjqhj_i4qn5WKPEFx9ORltwzrw1Ls6TRpKSgQPOajeUpC.G4nSTz56wJnWBPF1fLV5NaMab1Y6tJS8oZXJjIEzGdE8C8UirGQCeZnr1Gn6Bfow4NzkV_.PA5CyfPCml2BlF7Tn',
     '_ga': 'GA1.1.1880707367.1731336266',
@@ -55,33 +52,26 @@ def downloadVideo(link, id):
         'locale': 'en',
         'tt': 'WEp5bXY3',
     }
-
-    
     
     print("STEP 4: Getting the download link")
-    try:
-        response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
-        downloadSoup = BeautifulSoup(response.text, "html.parser")
-        downloadLink = downloadSoup.a["href"]
-        videoTitle = downloadSoup.p.getText().strip()
+    print("If this step fails, PLEASE read the steps above")
+    response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
 
-        print(f"STEP 5: Saving the video: {videoTitle}")
-        mp4File = urlopen(downloadLink)
+    downloadSoup = BeautifulSoup(response.text, "html.parser")
 
-        # Ensure the download directory exists
-        if not os.path.exists("videos"):
-            os.makedirs("videos")
+    downloadLink = downloadSoup.a["href"]
+    videoTitle = downloadSoup.p.getText().strip()
 
-        with open(f"videos/{id}-{videoTitle}.mp4", "wb") as output:
-            while True:
-                data = mp4File.read(4096)
-                if data:
-                    output.write(data)
-                else:
-                    break
-        print(f"Video {id} downloaded successfully.")
-    except Exception as e:
-        print(f"Error downloading video {id}: {e}")
+    print("STEP 5: Saving the video :)")
+    mp4File = urlopen(downloadLink)
+    # Feel free to change the download directory
+    with open(f"videos/{id}-{videoTitle}.mp4", "wb") as output:
+        while True:
+            data = mp4File.read(4096)
+            if data:
+                output.write(data)
+            else:
+                break
 
 print("STEP 1: Open Chrome browser")
 options = Options()
@@ -89,11 +79,11 @@ options.add_argument("start-maximized")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 driver = webdriver.Chrome(options=options)
-
-# Change the TikTok link to your target URL
+# Change the tiktok link
 driver.get("https://www.tiktok.com/@romania")
 
-# Adjust sleep time if you get CAPTCHA
+# IF YOU GET A TIKTOK CAPTCHA, CHANGE THE TIMEOUT HERE
+# to 60 seconds, just enough time for you to complete the captcha yourself.
 time.sleep(1)
 
 scroll_pause_time = 1
@@ -109,18 +99,23 @@ while True:
     if (screen_height) * i > scroll_height:
         break 
 
+# this class may change, so make sure to inspect the page and find the correct class
 className = "css-1uqux2o-DivItemContainerV2"
+
 script  = "let l = [];"
-script += "document.getElementsByClassName(\"" + className + "\").forEach(item => { l.push(item.querySelector('a').href)});"
+script += "document.getElementsByClassName(\""
+script += className
+script += "\").forEach(item => { l.push(item.querySelector('a').href)});"
 script += "return l;"
 
 urlsToDownload = driver.execute_script(script)
 
+
 print(f"STEP 3: Time to download {len(urlsToDownload)} videos")
 for index, url in enumerate(urlsToDownload):
-    print(f"Downloading video {index}")
+    print(f"Downloading video: {index}")
     downloadVideo(url, index)
     time.sleep(10)
 
-# Cleanup: close the browser
-driver.quit()
+
+
