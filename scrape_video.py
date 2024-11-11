@@ -1,107 +1,77 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-import time
-import os
-import requests
+import re
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
+import requests
 
-def downloadVideo(link, id):
-    try:
-        print(f"Downloading video {id} from: {link}")
-        cookies = {
-            # Replace with actual cookie data from browser session
-        }
+# Function to sanitize the video title for a valid file name
+def sanitize_filename(title):
+    return re.sub(r'[<>:"/\\|?*]', '_', title)  # Replace invalid characters with '_'
 
-        headers = {
-            # Replace with actual header data from browser session
-        }
+# Define cookies at the start
+cookies = {
+    'cf_clearance': 'P06jsxmcAOm5RE667Liyy8JqAqmtK.yxk37RcFoR4jE-1731336275-1.2.1.1-YQUdbxr83VgvzpaPhbY9lFxNchdPD0NlHXsJd_X8dBhVMMMh8dd9Hjjtb7AsKgxxsNaUi52qfl7o3SWLVAWVM06cYIQzVKqhO2Z8GxSFDXcEwNuIoQlyZZLQj5LFvPYWgetdCfZX.mULyAYeUTfAQXv.nEq1LhScbzteV0NlNknlwGtChz_YiFJVg_7f.XMhHNzsv1o2aJce3b8JMnrj_u7VNY22y.M_DQ.AD_h4itfhOmm4ngHGMGxtbbMEHCJ9VMhB2xujoUxLNGhzPlF6LwiY0eZZ9ZNxKKDVt_PDMoHUUMdr5YfpSNVZuzQjqhj_i4qn5WKPEFx9ORltwzrw1Ls6TRpKSgQPOajeUpC.G4nSTz56wJnWBPF1fLV5NaMab1Y6tJS8oZXJjIEzGdE8C8UirGQCeZnr1Gn6Bfow4NzkV_.PA5CyfPCml2BlF7Tn',
+    '_ga': 'GA1.1.1880707367.1731336266',
+    '__gads': 'ID=2f68e49bf6b21a33:T=1731336288:RT=1731336631:S=ALNI_MaKBxBiySHqf5pMHNnAtgySAzwyaw',
+    '__gpi': 'UID=00000f6623e3aafe:T=1731336288:RT=1731336631:S=ALNI_MZddt_64JSmTFK48dpPU6WRKhlxlQ',
+    '__eoi': 'ID=8b626cf14807e69d:T=1731336288:RT=1731336631:S=AA-AfjYCn9Z2Y6Gy6oDS5SXbMm97',
+    'FCNEC': '%5B%5B%22AKsRol_2rX1R8dxkNmB5MENtZQjtyC2C_oBHggEm6kdxe22BTE_oZ8-jWrPvoQqIaHrfdHBXWVwtrvNeSCNPy4W7AoqyLNS1lsEs1A4g611l7HvjKUO7-I9RXMnhi4205oahWXMZ2Fp3EuJxPkFmP0oTzT3jxOCOZg%3D%3D%22%5D%5D',
+    '_ga_ZSF3D6YSLC': 'GS1.1.1731336265.1.1.1731336629.46.0.0',
+}
 
-        params = {
-            'url': 'dl',
-        }
+headers = {
+    'accept': '*/*',
+    'accept-language': 'en-US,en;q=0.9',
+    'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'hx-current-url': 'https://ssstik.io/',
+    'hx-request': 'true',
+    'hx-target': 'target',
+    'hx-trigger': '_gcaptcha_pt',
+    'origin': 'https://ssstik.io',
+    'priority': 'u=1, i',
+    'referer': 'https://ssstik.io/',
+    'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+    'sec-ch-ua-arch': '"x86"',
+    'sec-ch-ua-bitness': '"64"',
+    'sec-ch-ua-full-version': '"130.0.6723.117"',
+    'sec-ch-ua-full-version-list': '"Chromium";v="130.0.6723.117", "Google Chrome";v="130.0.6723.117", "Not?A_Brand";v="99.0.0.0"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-model': '""',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-ch-ua-platform-version': '"10.0.0"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.117 Safari/537.36',
+}
 
-        data = {
-            'id': link,
-            'locale': 'en',
-            'tt': '',  # Use the actual 'tt' value from the network request
-        }
-        
-        response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
-        downloadSoup = BeautifulSoup(response.text, "html.parser")
+params = {
+    'url': 'dl',
+}
 
-        # Extract download link safely
-        downloadLink = downloadSoup.a["href"] if downloadSoup.a else None
-        if not downloadLink:
-            print("Failed to find download link.")
-            return
+data = {
+    'id': 'https://www.tiktok.com/@romania/video/7410755422740647201',
+    'locale': 'en',
+    'tt': 'WEp5bXY3',
+}
 
-        videoTitle = downloadSoup.p.getText().strip() if downloadSoup.p else f"video_{id}"
+# Make the request to get the download link
+response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
+downloadSoup = BeautifulSoup(response.text, "html.parser")
 
-        # Ensure the download directory exists
-        os.makedirs("videos", exist_ok=True)
+downloadLink = downloadSoup.a["href"]
+videoTitle = downloadSoup.p.getText().strip()
 
-        print("Saving the video...")
-        mp4File = urlopen(downloadLink)
-        with open(f"videos/{id}-{videoTitle}.mp4", "wb") as output:
-            while True:
-                data = mp4File.read(4096)
-                if not data:
-                    break
-                output.write(data)
+# Sanitize the video title for a valid file name
+safe_video_title = sanitize_filename(videoTitle)
 
-        print(f"Video {id} downloaded successfully.")
-    except Exception as e:
-        print(f"Error downloading video {id}: {e}")
-
-print("Opening Chrome browser...")
-options = Options()
-options.add_argument("start-maximized")
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-
-# Set the path to chromedriver
-chromedriver_path = "C:\Program Files\Google\Chrome\Application"  # Update with your actual path
-driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
-
-try:
-    # Navigate to the TikTok page
-    driver.get("https://www.tiktok.com/@romania")
-    time.sleep(1)  # Adjust as needed for CAPTCHA handling
-
-    scroll_pause_time = 1
-    screen_height = driver.execute_script("return window.screen.height;")
-    i = 1
-
-    print("Scrolling page...")
+# Download the video
+mp4File = urlopen(downloadLink)
+with open(f"videos/{safe_video_title}.mp4", "wb") as output:
     while True:
-        driver.execute_script(f"window.scrollTo(0, {screen_height}*{i});")
-        i += 1
-        time.sleep(scroll_pause_time)
-        scroll_height = driver.execute_script("return document.body.scrollHeight;")
-        if (screen_height) * i > scroll_height:
+        data = mp4File.read(4096)
+        if data:
+            output.write(data)
+        else:
             break
 
-    # Extract URLs for videos
-    className = "tiktok-1s72ajp-DivWrapper"
-    script = """
-    let l = [];
-    document.getElementsByClassName("tiktok-1s72ajp-DivWrapper").forEach(item => {
-        let link = item.querySelector('a');
-        if (link) l.push(link.href);
-    });
-    return l;
-    """
-
-    urlsToDownload = driver.execute_script(script)
-    print(f"Found {len(urlsToDownload)} videos to download.")
-
-    for index, url in enumerate(urlsToDownload):
-        print(f"Starting download for video {index + 1}/{len(urlsToDownload)}")
-        downloadVideo(url, index)
-        time.sleep(10)  # Adjust delay as necessary
-
-finally:
-    driver.quit()
-    print("Browser closed.")
+print(f"Video {safe_video_title} downloaded successfully.")
